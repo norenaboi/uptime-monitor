@@ -1,0 +1,158 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background-color: #0d1117;
+    color: #e6edf3;
+    font-family:
+        -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial,
+        sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ── Page layout ───────────────────────────────────────────────── */
+
+.page {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 40px 24px;
+}
+
+/* ── Header ────────────────────────────────────────────────────── */
+
+.site-header {
+    margin-bottom: 32px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #30363d;
+}
+
+.site-header h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: #e6edf3;
+    letter-spacing: -0.3px;
+}
+
+/* ── Monitor card ──────────────────────────────────────────────── */
+
+.monitor-card {
+    background-color: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    transition: border-color 0.15s ease;
+}
+
+.monitor-card:hover {
+    border-color: #484f58;
+}
+
+/* ── Card header ───────────────────────────────────────────────── */
+
+.monitor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.monitor-name {
+    color: #58a6ff;
+    font-size: 16px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.monitor-name:hover {
+    text-decoration: underline;
+}
+
+/* ── Status badge ──────────────────────────────────────────────── */
+
+.monitor-status {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.4px;
+}
+
+.monitor-status.status-up {
+    color: #3fb950;
+}
+
+.monitor-status.status-down {
+    color: #f85149;
+}
+
+.monitor-status.status-unknown {
+    color: #8b949e;
+}
+
+/* ── History bar ───────────────────────────────────────────────── */
+
+.history-bar {
+    display: flex;
+    height: 36px;
+    gap: 2px;
+    margin-bottom: 12px;
+    overflow: visible;
+}
+
+.bar-segment {
+    flex: 1;
+    border-radius: 2px;
+    cursor: default;
+    transition: filter 0.1s ease;
+}
+
+.bar-segment:hover {
+    filter: brightness(1.35);
+}
+
+.bar-segment.status-up {
+    background-color: #3fb950;
+}
+
+.bar-segment.status-down {
+    background-color: #f85149;
+}
+
+.bar-segment.status-unknown {
+    background-color: #21262d;
+}
+
+/* ── Stats row ─────────────────────────────────────────────────── */
+
+.monitor-stats {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #8b949e;
+}
+
+/* ── Floating tooltip ──────────────────────────────────────────── */
+
+.tooltip {
+    position: fixed;
+    background-color: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 12px;
+    color: #e6edf3;
+    pointer-events: none;
+    display: none;
+    white-space: nowrap;
+    z-index: 9999;
+    box-shadow:
+        0 4px 12px rgba(0, 0, 0, 0.5),
+        0 1px 3px rgba(0, 0, 0, 0.4);
+}

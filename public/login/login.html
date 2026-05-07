@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Admin Dashboard - Uptime Monitor</title>
+        <link rel="stylesheet" href="/login/style.css" />
+    </head>
+    <body>
+        <div class="container">
+            <h1>Admin Dashboard</h1>
+            <form onsubmit="login(event)">
+                <div class="form-group">
+                    <label for="masterKey">Master Key:</label>
+                    <input
+                        type="password"
+                        id="masterKey"
+                        required
+                        placeholder="Enter master key"
+                    />
+                </div>
+                <button type="submit">Access Dashboard</button>
+                <div class="error" id="error"></div>
+            </form>
+        </div>
+        <script src="/login/app.js"></script>
+    </body>
+</html>

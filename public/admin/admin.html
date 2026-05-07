@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Admin Dashboard — Uptime Monitor</title>
+        <link rel="stylesheet" href="/admin/style.css" />
+    </head>
+    <body>
+        <div class="page">
+            <!-- ── Header ─────────────────────────────────────────────── -->
+            <header class="site-header">
+                <h1>Admin Dashboard</h1>
+                <div class="header-actions">
+                    <button class="btn btn-primary" id="create-btn">
+                        + Create
+                    </button>
+                    <button class="btn btn-ghost" id="logout-btn">
+                        Logout
+                    </button>
+                </div>
+            </header>
+
+            <!-- ── Monitor cards ──────────────────────────────────────── -->
+            <main id="monitors-container"></main>
+        </div>
+
+        <!-- ── Floating tooltip ───────────────────────────────────────── -->
+        <div id="tooltip" class="tooltip"></div>
+
+        <!-- ── Create / Edit modal ────────────────────────────────────── -->
+        <div id="monitor-modal" style="display: none">
+            <div class="modal">
+                <div class="modal-header">
+                    <h2 id="modal-title">Create Monitor</h2>
+                    <button
+                        class="modal-close"
+                        id="modal-close-btn"
+                        aria-label="Close"
+                    >
+                        &#x2715;
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="modal-name">Name</label>
+                        <input
+                            type="text"
+                            id="modal-name"
+                            placeholder="My Website"
+                            autocomplete="off"
+                        />
+                    </div>
+                    <div class="form-group">
+                        <label for="modal-url">URL</label>
+                        <input
+                            type="url"
+                            id="modal-url"
+                            placeholder="https://example.com"
+                            autocomplete="off"
+                        />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-ghost" id="modal-cancel-btn">
+                        Cancel
+                    </button>
+                    <button class="btn btn-primary" id="modal-submit-btn">
+                        Create
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Delete confirm modal ───────────────────────────────────── -->
+        <div id="delete-modal" style="display: none">
+            <div class="modal modal-sm">
+                <div class="modal-header">
+                    <h2>Delete Monitor</h2>
+                    <button
+                        class="modal-close"
+                        id="delete-close-btn"
+                        aria-label="Close"
+                    >
+                        &#x2715;
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>
+                        Are you sure you want to delete
+                        <strong id="delete-monitor-name"></strong>?
+                    </p>
+                    <p class="text-muted">This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-ghost" id="delete-cancel-btn">
+                        Cancel
+                    </button>
+                    <button class="btn btn-danger" id="delete-confirm-btn">
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <script type="module" src="/admin/app.js"></script>
+    </body>
+</html>
