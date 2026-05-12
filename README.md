@@ -12,7 +12,7 @@ Built with Node.js, Express, and TypeScript.
 ### Install
 
 ```
-git clone https://github.com/your-username/uptime-monitor.git
+git clone https://github.com/norenaboi/uptime-monitor.git
 cd uptime-monitor
 npm install
 ```

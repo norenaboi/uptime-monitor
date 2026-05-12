@@ -7,8 +7,9 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
+    "moduleResolution": "bundler",
     "composite": true,
-    "lib": ["ES2020", "DOM"]
+    "lib": ["ES2020", "DOM"],
   },
   "include": ["public/**/*.ts", "public/**/*.html", "public/**/*.css"],
   "exclude": ["node_modules", "dist"],

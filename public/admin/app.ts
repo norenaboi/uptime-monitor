@@ -1,24 +1,10 @@
-export {}; // isolate this file as an ES module (prevents global-scope conflicts)
-
-// ── Types ────────────────────────────────────────────────────────────────────
-
-type CheckStatus = "up" | "down" | "unknown";
-
-interface HistorySlot {
-  time: Date;
-  status: CheckStatus;
-}
-
-interface MonitorData {
-  id: number;
-  name: string;
-  url: string;
-  createdAt: number;
-  currentStatus: CheckStatus;
-  totalChecks: number;
-  lastChecked: number;
-  history: HistorySlot[];
-}
+import {
+  type MonitorData,
+  formatLastChecked,
+  buildHistoryBar,
+  initTooltip,
+  parseMonitorResponse,
+} from "../shared/utils.js";
 
 // ── Helpers ────────────────────────────────────────────────────────
 
@@ -48,42 +34,10 @@ async function fetchStatus(): Promise<MonitorData[]> {
       throw new Error("Failed to fetch status");
     }
 
-    const data = await response.json();
-    return data.map(
-      (m: any): MonitorData => ({
-        ...m,
-        history: m.history.map(
-          (h: any): HistorySlot => ({
-            status: h.status,
-            time: new Date(h.time),
-          }),
-        ),
-      }),
-    );
+    return parseMonitorResponse(await response.json());
   } catch (error: any) {
     return [];
   }
-}
-
-function formatLastChecked(unix_timestamp: number): string {
-  let date = new Date(unix_timestamp * 1000);
-  if (date === null) return "Never";
-
-  const diffMs = Date.now() - date.getTime();
-  const diffMin = Math.floor(diffMs / 60_000);
-  const diffHours = Math.floor(diffMs / 3_600_000);
-
-  if (diffMin < 1) return "Just now";
-  if (diffMin < 60) return `${diffMin} min ago`;
-  return `${diffHours} hour${diffHours !== 1 ? "s" : ""} ago`;
-}
-
-function formatSlotTime(date: Date): string {
-  const month = date.toLocaleString("en-US", { month: "short" });
-  const day = date.getDate();
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-  return `${month} ${day}, ${hours}:${minutes}`;
 }
 
 let monitors: MonitorData[] = [];
@@ -161,30 +115,29 @@ function renderMonitor(monitor: MonitorData): HTMLElement {
   nameRow.appendChild(editBtn);
   nameRow.appendChild(deleteBtn);
 
-  // ── History bar ───────────────────────────────────────────────────────────
-  const bar = document.createElement("div");
-  bar.className = "history-bar";
-
-  for (const slot of monitor.history) {
-    const seg = document.createElement("div");
-    seg.className = `bar-segment status-${slot.status}`;
-    seg.dataset["tooltip"] = `${formatSlotTime(slot.time)} — ${slot.status}`;
-    bar.appendChild(seg);
-  }
-
   // ── Status row ────────────────────────────────────────────────────────────
   const statusRow = document.createElement("div");
   statusRow.className = "monitor-status-row";
 
+  let statusTemp: "up" | "down" | "unknown";
+  let timeTemp: number | undefined;
+  if (!monitor.lastCheck) {
+    statusTemp = "unknown";
+    timeTemp = undefined;
+  } else {
+    statusTemp = monitor.lastCheck.status;
+    timeTemp = monitor.lastCheck.time;
+  }
+
   const statusDot = document.createElement("span");
-  statusDot.className = `status-dot status-${monitor.currentStatus}`;
+  statusDot.className = `status-dot status-${statusTemp}`;
 
   const statusText = document.createElement("span");
-  statusText.className = `status-text status-${monitor.currentStatus}`;
-  statusText.textContent = monitor.currentStatus.toUpperCase();
+  statusText.className = `status-text status-${statusTemp}`;
+  statusText.textContent = statusTemp.toUpperCase();
 
   const lastCheckedSpan = document.createElement("span");
-  lastCheckedSpan.textContent = `· Last checked: ${formatLastChecked(monitor.lastChecked)}`;
+  lastCheckedSpan.textContent = `· Last checked: ${formatLastChecked(timeTemp)}`;
 
   statusRow.appendChild(statusDot);
   statusRow.appendChild(statusText);
@@ -192,7 +145,7 @@ function renderMonitor(monitor: MonitorData): HTMLElement {
 
   // ── Assemble card ─────────────────────────────────────────────────────────
   card.appendChild(nameRow);
-  card.appendChild(bar);
+  card.appendChild(buildHistoryBar(monitor.history));
   card.appendChild(statusRow);
 
   return card;
@@ -297,6 +250,11 @@ function openDeleteModal(id: number): void {
 
 function closeDeleteModal(): void {
   deleteModal.style.display = "none";
+  deletingId = null;
+}
+
+function handleDeleteConfirm(): void {
+  monitors = monitors.filter((m) => m.id !== deletingId);
   fetch(`/api/monitor/${deletingId}`, {
     method: "DELETE",
     headers: {
@@ -304,11 +262,6 @@ function closeDeleteModal(): void {
       Authorization: requireMasterKey(),
     },
   });
-  deletingId = null;
-}
-
-function handleDeleteConfirm(): void {
-  monitors = monitors.filter((m) => m.id !== deletingId);
   closeDeleteModal();
   render();
 }
@@ -391,51 +344,9 @@ monitorsContainer.addEventListener("click", (e: MouseEvent) => {
   }
 });
 
-// ── Tooltip (event delegation) ────────────────────────────────────────────────
+// ── Tooltip ───────────────────────────────────────────────────────────────────
 
-document.addEventListener("mouseover", (e: MouseEvent) => {
-  const target = e.target as HTMLElement;
-  const tooltipText = target.dataset["tooltip"];
-  if (!tooltipText) return;
-
-  tooltip.textContent = tooltipText;
-  tooltip.style.display = "block";
-
-  requestAnimationFrame(() => {
-    const segRect = target.getBoundingClientRect();
-    const tipRect = tooltip.getBoundingClientRect();
-
-    const GAP = 6; // px between segment top and tooltip bottom
-    const EDGE_PAD = 8; // minimum distance from viewport edges
-
-    // Horizontally centered over the segment
-    let left = segRect.left + segRect.width / 2 - tipRect.width / 2;
-    left = Math.max(
-      EDGE_PAD,
-      Math.min(left, window.innerWidth - tipRect.width - EDGE_PAD),
-    );
-
-    // Position above the segment; flip below if it would overflow the top
-    let top = segRect.top - tipRect.height - GAP;
-    if (top < EDGE_PAD) {
-      top = segRect.bottom + GAP;
-    }
-
-    tooltip.style.left = `${left}px`;
-    tooltip.style.top = `${top}px`;
-  });
-});
-
-document.addEventListener("mouseout", (e: MouseEvent) => {
-  const target = e.target as HTMLElement;
-  if (!target.classList.contains("bar-segment")) return;
-
-  // Only hide when truly leaving the segment (not moving to a child element)
-  const related = e.relatedTarget as HTMLElement | null;
-  if (related && target.contains(related)) return;
-
-  tooltip.style.display = "none";
-});
+initTooltip(tooltip);
 
 // ── Bootstrap ────────────────────────────────────────────────────────────────
 
@@ -445,7 +356,7 @@ async function render(): Promise<void> {
 
   const masterKey: string | null = sessionStorage.getItem("masterKey");
   if (!masterKey) {
-    window.location.href = "/admin/login";
+    window.location.href = "/login";
     return;
   }
 
@@ -458,3 +369,4 @@ async function render(): Promise<void> {
 }
 
 render();
+setInterval(render, 30_000);

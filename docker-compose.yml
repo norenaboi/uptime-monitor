@@ -1,0 +1,11 @@
+services:
+  uptime:
+    build:
+      context: https://github.com/norenaboi/uptime-monitor.git#main
+      dockerfile: Dockerfile
+    container_name: uptime
+    restart: always
+    environment:
+      - MASTER_KEY=mypasswordisssafe
+    ports:
+      - "3000:3000"

@@ -34,18 +34,21 @@ function generateHistory(
   checks: CheckStatus[],
 ): HistorySlot[] {
   const SLOTS = 168;
-  const now = Date.now();
   const slots: HistorySlot[] = [];
 
   for (let i = 0; i < SLOTS; i++) {
-    const hoursAgo = SLOTS - 1 - i;
-    const time = new Date(now - hoursAgo * 3_600_000);
+    const timesAgo = SLOTS - 1 - i;
 
-    let status: CheckStatus;
-    if (hoursAgo >= totalChecks) {
+    let check: CheckStatus;
+    let status: "up" | "down" | "unknown";
+    let time: Date | null;
+    if (timesAgo >= totalChecks) {
       status = "unknown";
+      time = null;
     } else {
-      status = checks[checks.length - 1 - hoursAgo];
+      check = checks[checks.length - 1 - timesAgo];
+      status = check.status;
+      time = check.time != null ? new Date(check.time * 1000) : null;
     }
 
     slots.push({ time, status });
@@ -114,17 +117,18 @@ router.get("/api/status", (req: Request, res: Response) => {
   const data: MonitorData[] = monitors.map((monitor) => {
     const checks = db.getAllChecks(monitor.id);
     const total = checks.length;
-    const lastCheck = checks[total - 1];
-    const statuses = checks.map((c) => c.status as CheckStatus);
+    const statuses: CheckStatus[] = checks.map((c) => ({
+      status: c.status,
+      time: c.checked_at,
+    }));
 
     return {
       id: monitor.id,
       name: monitor.name,
       url: monitor.url,
       createdAt: monitor.created_at,
-      currentStatus: (lastCheck?.status ?? "unknown") as CheckStatus,
+      lastCheck: statuses[total - 1],
       totalChecks: total,
-      lastChecked: lastCheck?.checked_at ?? 0,
       history: generateHistory(total, statuses),
     };
   });
@@ -190,16 +194,6 @@ router.get(
     return res.json(db.getAllChecks(Number(req.params.id)));
   },
 );
-
-router.get("/api/check/:id", verifyMasterKey, (req: Request, res: Response) => {
-  const check = db.getLatestCheck(Number(req.params.id));
-  return check ? res.json(check) : res.sendStatus(404);
-});
-
-router.get("/api/total/:id", verifyMasterKey, (req: Request, res: Response) => {
-  const total = db.getTotalChecks(Number(req.params.id));
-  return total !== undefined ? res.json(total) : res.sendStatus(404);
-});
 
 router.get("*path", (req: Request, res: Response) => {
   return res.sendFile(pathFinder("index", "404"));

@@ -19,11 +19,14 @@ export type Check = {
   checked_at: number;
 };
 
-export type CheckStatus = "up" | "down" | "unknown";
+export type CheckStatus = {
+  status: "up" | "down" | "unknown";
+  time: number;
+};
 
 export type HistorySlot = {
-  time: Date;
-  status: CheckStatus;
+  time: Date | null;
+  status: "up" | "down" | "unknown";
 };
 
 export type MonitorData = {
@@ -31,8 +34,7 @@ export type MonitorData = {
   name: string;
   url: string;
   createdAt: number;
-  currentStatus: CheckStatus;
+  lastCheck: CheckStatus;
   totalChecks: number;
-  lastChecked: number;
   history: HistorySlot[];
 };

@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon --ignore dist/ --exec \"tsc -p tsconfig.client.json && copyfiles -u 1 'public/**/*.html' 'public/**/*.css' dist/public && ts-node src/server.ts\" --ext ts,html,css",
-    "build": "tsc && tsc -p tsconfig.client.json && copyfiles -u 1 'public/**/*.html' 'public/**/*.css' dist/public",
+    "dev": "nodemon --ignore dist/ --exec \"tsc -p tsconfig.client.json && copyfiles -u 1 'public/**/*.html' 'public/**/*.css' 'public/*.ico' dist/public && ts-node src/server.ts\" --ext ts,html,css",
+    "build": "tsc && tsc -p tsconfig.client.json && copyfiles -u 1 'public/**/*.html' 'public/**/*.css' 'public/*.ico' dist/public",
     "start": "node dist/src/server.js"
   },
   "keywords": [],
@@ -17,7 +17,6 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^25.6.0",
-    "@types/node-cron": "^3.0.11",
     "copyfiles": "^2.4.1",
     "nodemon": "^3.1.14",
     "ts-node": "^10.9.2",
@@ -25,10 +24,9 @@
   },
   "dependencies": {
     "axios": "^1.16.0",
-    "better-sqlite3": "^12.9.0",
+    "better-sqlite3": "^11.0.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
-    "express": "^5.2.1",
-    "node-cron": "^4.2.1"
+    "express": "^5.2.1"
   }
 }

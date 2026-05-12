@@ -82,14 +82,6 @@ const stmtGetAllChecks = db.prepare<[number], Check>(
   `SELECT * FROM checks WHERE monitor_id = ?`,
 );
 
-const stmtGetTotalChecks = db.prepare<[number], number>(
-  `SELECT COUNT(*) FROM checks WHERE monitor_id = ?`,
-);
-
-const stmtGetLatestCheck = db.prepare<[number], Check>(
-  `SELECT * FROM checks WHERE monitor_id = ? ORDER BY checked_at DESC LIMIT 1`,
-);
-
 // --- Helpers -----------------------------------------------------------------
 
 export function createMonitor(name: string, url: string): Monitor {
@@ -107,15 +99,14 @@ export function createMonitor(name: string, url: string): Monitor {
 }
 
 export function editMonitor(id: number, name?: string, url?: string): Monitor {
-  if (!name && !url) return getMonitorById(id) as Monitor;
-  else if (!name) {
-    stmtEditMonitor.run({ id, url });
-    return stmtGetMonitorById.get(id) as Monitor;
-  } else if (!url) {
-    stmtEditMonitor.run({ id, name });
-    return stmtGetMonitorById.get(id) as Monitor;
-  }
-  stmtEditMonitor.run({ id, name, url });
+  const existing = getMonitorById(id);
+  if (!existing)
+    throw Object.assign(new Error("Monitor not found"), { status: 404 });
+  stmtEditMonitor.run({
+    id,
+    name: name ?? existing.name,
+    url: url ?? existing.url,
+  });
   return stmtGetMonitorById.get(id) as Monitor;
 }
 
@@ -143,12 +134,4 @@ export function recordCheck(
 
 export function getAllChecks(monitor_id: number): Check[] {
   return stmtGetAllChecks.all(monitor_id);
-}
-
-export function getLatestCheck(monitor_id: number): Check | undefined {
-  return stmtGetLatestCheck.get(monitor_id);
-}
-
-export function getTotalChecks(monitor_id: number): number | undefined {
-  return stmtGetTotalChecks.get(monitor_id);
 }

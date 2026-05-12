@@ -1,62 +1,18 @@
-// ── Types ────────────────────────────────────────────────────────────────────
+import {
+  type MonitorData,
+  formatLastChecked,
+  buildHistoryBar,
+  initTooltip,
+  parseMonitorResponse,
+} from "../shared/utils.js";
 
-type CheckStatus = "up" | "down" | "unknown";
-
-type HistorySlot = {
-  time: Date;
-  status: CheckStatus;
-};
-
-type MonitorData = {
-  id: number;
-  name: string;
-  url: string;
-  createdAt: number;
-  currentStatus: CheckStatus;
-  totalChecks: number;
-  lastChecked: number;
-  history: HistorySlot[];
-};
-
-// ── Helpers ────────────────────────────────────────────────────────
-
-function formatLastChecked(unix_timestamp: number): string {
-  let date = new Date(unix_timestamp * 1000);
-  if (date === null) return "Never";
-
-  const diffMs = Date.now() - date.getTime();
-  const diffMin = Math.floor(diffMs / 60_000);
-  const diffHours = Math.floor(diffMs / 3_600_000);
-
-  if (diffMin < 1) return "Just now";
-  if (diffMin < 60) return `${diffMin} min ago`;
-  return `${diffHours} hour${diffHours !== 1 ? "s" : ""} ago`;
-}
-
-function formatSlotTime(date: Date): string {
-  const month = date.toLocaleString("en-US", { month: "short" });
-  const day = date.getDate();
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-  return `${month} ${day}, ${hours}:${minutes}`;
-}
+// ── API ───────────────────────────────────────────────────────────────────────
 
 async function fetchStatus(): Promise<MonitorData[]> {
   try {
     const response = await fetch("/api/status");
     if (!response.ok) throw new Error("Failed to fetch status");
-    const data = await response.json();
-    return data.map(
-      (m: any): MonitorData => ({
-        ...m,
-        history: m.history.map(
-          (h: any): HistorySlot => ({
-            status: h.status,
-            time: new Date(h.time),
-          }),
-        ),
-      }),
-    );
+    return parseMonitorResponse(await response.json());
   } catch {
     return [];
   }
@@ -67,7 +23,6 @@ let monitors: MonitorData[] = [];
 // ── Render ───────────────────────────────────────────────────────────────────
 
 function renderMonitor(monitor: MonitorData): HTMLElement {
-  // Card
   const card = document.createElement("div");
   card.className = "monitor-card";
 
@@ -82,23 +37,22 @@ function renderMonitor(monitor: MonitorData): HTMLElement {
   nameLink.rel = "noopener noreferrer";
   nameLink.textContent = monitor.name;
 
+  let statusTemp: "up" | "down" | "unknown";
+  let timeTemp: number | undefined;
+  if (!monitor.lastCheck) {
+    statusTemp = "unknown";
+    timeTemp = undefined;
+  } else {
+    statusTemp = monitor.lastCheck.status;
+    timeTemp = monitor.lastCheck.time;
+  }
+
   const statusSpan = document.createElement("span");
-  statusSpan.className = `monitor-status status-${monitor.currentStatus}`;
-  statusSpan.textContent = monitor.currentStatus.toUpperCase();
+  statusSpan.className = `monitor-status status-${statusTemp}`;
+  statusSpan.textContent = statusTemp.toUpperCase();
 
   header.appendChild(nameLink);
   header.appendChild(statusSpan);
-
-  // History bar
-  const bar = document.createElement("div");
-  bar.className = "history-bar";
-
-  for (const slot of monitor.history) {
-    const seg = document.createElement("div");
-    seg.className = `bar-segment status-${slot.status}`;
-    seg.dataset["tooltip"] = `${formatSlotTime(slot.time)} — ${slot.status}`;
-    bar.appendChild(seg);
-  }
 
   // Stats row
   const stats = document.createElement("div");
@@ -108,67 +62,21 @@ function renderMonitor(monitor: MonitorData): HTMLElement {
   checksSpan.textContent = `${monitor.totalChecks} total checks`;
 
   const lastCheckedSpan = document.createElement("span");
-  lastCheckedSpan.textContent = `Last checked: ${formatLastChecked(monitor.lastChecked)}`;
+  lastCheckedSpan.textContent = `Last checked: ${formatLastChecked(timeTemp)}`;
 
   stats.appendChild(checksSpan);
   stats.appendChild(lastCheckedSpan);
 
   card.appendChild(header);
-  card.appendChild(bar);
+  card.appendChild(buildHistoryBar(monitor.history));
   card.appendChild(stats);
 
   return card;
 }
 
-// ── Tooltip (event delegation) ────────────────────────────────────────────────
+// ── Tooltip ───────────────────────────────────────────────────────────────────
 
-const tooltip = document.getElementById("tooltip") as HTMLElement;
-
-document.addEventListener("mouseover", (e: MouseEvent) => {
-  const target = e.target as HTMLElement;
-  const tooltipText = target.dataset["tooltip"];
-  if (!tooltipText) return;
-
-  tooltip.textContent = tooltipText;
-  tooltip.style.display = "block";
-
-  requestAnimationFrame(() => {
-    const segRect = target.getBoundingClientRect();
-    const tipRect = tooltip.getBoundingClientRect();
-
-    const GAP = 6; // px between bar segment top and tooltip bottom
-    const EDGE_PAD = 8; // minimum distance from viewport edges
-
-    // Horizontally centered over the segment
-    let left = segRect.left + segRect.width / 2 - tipRect.width / 2;
-    // Clamp to viewport
-    left = Math.max(
-      EDGE_PAD,
-      Math.min(left, window.innerWidth - tipRect.width - EDGE_PAD),
-    );
-
-    // Position above the segment
-    let top = segRect.top - tipRect.height - GAP;
-    // If it would go off the top, flip below instead
-    if (top < EDGE_PAD) {
-      top = segRect.bottom + GAP;
-    }
-
-    tooltip.style.left = `${left}px`;
-    tooltip.style.top = `${top}px`;
-  });
-});
-
-document.addEventListener("mouseout", (e: MouseEvent) => {
-  const target = e.target as HTMLElement;
-  if (!target.classList.contains("bar-segment")) return;
-
-  // Only hide if we're truly leaving the segment (not moving to a child)
-  const related = e.relatedTarget as HTMLElement | null;
-  if (related && target.contains(related)) return;
-
-  tooltip.style.display = "none";
-});
+initTooltip(document.getElementById("tooltip") as HTMLElement);
 
 // ── Bootstrap ────────────────────────────────────────────────────────────────
 
@@ -185,3 +93,4 @@ async function render(): Promise<void> {
 }
 
 render();
+setInterval(render, 30_000);

@@ -2,6 +2,7 @@ import axios from "axios";
 import * as db from "./db";
 
 export function initChecks() {
+  checkMonitors();
   setInterval(async () => {
     await checkMonitors();
   }, 3600_000);
