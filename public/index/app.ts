@@ -4,6 +4,8 @@ import {
   buildHistoryBar,
   initTooltip,
   parseMonitorResponse,
+  computeUptimeRate,
+  uptimeRateClass,
 } from "../shared/utils.js";
 
 // ── API ───────────────────────────────────────────────────────────────────────
@@ -53,6 +55,17 @@ function renderMonitor(monitor: MonitorData): HTMLElement {
 
   header.appendChild(nameLink);
   header.appendChild(statusSpan);
+
+  // Uptime rate badge
+  const rate = computeUptimeRate(monitor.history);
+  const rateClass = uptimeRateClass(rate);
+
+  const uptimeBadge = document.createElement("span");
+  uptimeBadge.className = `uptime-badge uptime-${rateClass}`;
+  uptimeBadge.textContent =
+    rate !== null ? `${rate.toFixed(2)}% uptime` : "No data";
+
+  header.appendChild(uptimeBadge);
 
   // Stats row
   const stats = document.createElement("div");

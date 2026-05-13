@@ -42,6 +42,36 @@ export function formatSlotTime(date: Date): string {
   return `${month} ${day}, ${hours}:${minutes}`;
 }
 
+// ── Uptime rate ──────────────────────────────────────────────────────────────
+
+/**
+ * Returns the uptime percentage (0–100) based on known history slots.
+ * Slots with status "unknown" are excluded from the calculation.
+ */
+export function computeUptimeRate(history: HistorySlot[]): number | null {
+  const known = history.filter((s) => s.status !== "unknown");
+  if (known.length === 0) return null;
+  const up = known.filter((s) => s.status === "up").length;
+  return (up / known.length) * 100;
+}
+
+/**
+ * Returns a CSS class modifier based on the uptime percentage:
+ *   >= 99%  → "excellent"  (green)
+ *   >= 95%  → "good"       (teal/lime)
+ *   >= 80%  → "fair"       (yellow)
+ *   < 80%   → "poor"       (red)
+ */
+export function uptimeRateClass(
+  rate: number | null,
+): "excellent" | "good" | "fair" | "poor" | "unknown" {
+  if (rate === null) return "unknown";
+  if (rate >= 99) return "excellent";
+  if (rate >= 95) return "good";
+  if (rate >= 80) return "fair";
+  return "poor";
+}
+
 // ── History bar ───────────────────────────────────────────────────────────────
 
 export function buildHistoryBar(history: HistorySlot[]): HTMLElement {
